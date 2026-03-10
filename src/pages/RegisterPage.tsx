@@ -13,11 +13,15 @@ export default function RegisterPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    register(name, email, password);
-    toast({ title: 'Account created!' });
-    navigate('/');
+    const success = await register(name, email, password);
+    if (success) {
+      toast({ title: 'Account created! Check your email to confirm your account.' });
+      navigate('/');
+    } else {
+      toast({ title: 'Registration failed', description: 'This email may already be in use. Please try again.', variant: 'destructive' });
+    }
   };
 
   return (

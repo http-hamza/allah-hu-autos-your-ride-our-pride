@@ -1,14 +1,36 @@
 import { Container } from '@/components/ui/Container';
-import { dummyProducts, dummyOrders, dummyBookings, dummyUsers } from '@/lib/dummy-data';
+import { useAllOrders } from '@/hooks/useOrders';
+import { useAllBookings } from '@/hooks/useBookings';
+import { useProducts } from '@/hooks/useProducts';
 import { formatPrice, ORDER_STATUSES } from '@/lib/constants';
 import { Package, ShoppingBag, Calendar, Users } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
+
+function useCustomerCount() {
+  return useQuery({
+    queryKey: ['admin', 'customer_count'],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from('profiles')
+        .select('id', { count: 'exact', head: true })
+        .eq('role', 'customer');
+      return count || 0;
+    },
+  });
+}
 
 export default function AdminDashboard() {
+  const { data: products = [] } = useProducts();
+  const { data: orders = [] } = useAllOrders();
+  const { data: bookings = [] } = useAllBookings();
+  const { data: customerCount = 0 } = useCustomerCount();
+
   const stats = [
-    { icon: Package, label: 'Products', value: dummyProducts.length, color: 'text-blue-600 bg-blue-50' },
-    { icon: ShoppingBag, label: 'Orders', value: dummyOrders.length, color: 'text-green-600 bg-green-50' },
-    { icon: Calendar, label: 'Bookings', value: dummyBookings.length, color: 'text-purple-600 bg-purple-50' },
-    { icon: Users, label: 'Customers', value: dummyUsers.filter(u => u.role === 'customer').length, color: 'text-orange-600 bg-orange-50' },
+    { icon: Package, label: 'Products', value: products.length, color: 'text-blue-600 bg-blue-50' },
+    { icon: ShoppingBag, label: 'Orders', value: orders.length, color: 'text-green-600 bg-green-50' },
+    { icon: Calendar, label: 'Bookings', value: bookings.length, color: 'text-purple-600 bg-purple-50' },
+    { icon: Users, label: 'Customers', value: customerCount, color: 'text-orange-600 bg-orange-50' },
   ];
 
   return (
@@ -28,7 +50,7 @@ export default function AdminDashboard() {
         <table className="w-full text-sm">
           <thead><tr className="border-b border-border bg-secondary/50"><th className="text-left p-3 font-semibold text-foreground">Order</th><th className="text-left p-3 font-semibold text-foreground hidden sm:table-cell">Customer</th><th className="text-left p-3 font-semibold text-foreground">Status</th><th className="text-right p-3 font-semibold text-foreground">Total</th></tr></thead>
           <tbody>
-            {dummyOrders.map(o => (
+            {orders.slice(0, 10).map(o => (
               <tr key={o.id} className="border-b border-border last:border-0">
                 <td className="p-3 font-medium text-foreground">{o.order_number}</td>
                 <td className="p-3 text-muted-foreground hidden sm:table-cell">{o.shipping_name}</td>

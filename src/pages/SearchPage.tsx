@@ -1,8 +1,8 @@
-import { useState, useMemo } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Container } from '@/components/ui/Container';
 import { ProductCard } from '@/components/product/ProductCard';
-import { searchProducts } from '@/lib/dummy-data';
+import { useSearchProducts } from '@/hooks/useSearch';
 import { useDebounce } from '@/hooks/useDebounce';
 import { Search } from 'lucide-react';
 
@@ -13,7 +13,7 @@ export default function SearchPage() {
   const initial = params.get('q') || '';
   const [query, setQuery] = useState(initial);
   const debounced = useDebounce(query, 300);
-  const results = useMemo(() => debounced.trim() ? searchProducts(debounced) : [], [debounced]);
+  const { data: results = [], isLoading } = useSearchProducts(debounced);
 
   return (
     <div className="fade-in">
@@ -40,16 +40,24 @@ export default function SearchPage() {
         </div>
         {debounced.trim() && (
           <>
-            <p className="text-sm text-muted-foreground mb-6">{results.length} result{results.length !== 1 ? 's' : ''} for "{debounced}"</p>
-            {results.length > 0 ? (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 stagger">
-                {results.map(p => <ProductCard key={p.id} product={p} />)}
+            {isLoading ? (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {Array.from({ length: 4 }).map((_, i) => <div key={i} className="rounded-2xl border border-border bg-card animate-pulse aspect-square" />)}
               </div>
             ) : (
-              <div className="text-center py-20">
-                <h3 className="text-lg font-bold text-foreground mb-2">No Results Found</h3>
-                <p className="text-muted-foreground text-sm">Try a different search term.</p>
-              </div>
+              <>
+                <p className="text-sm text-muted-foreground mb-6">{results.length} result{results.length !== 1 ? 's' : ''} for "{debounced}"</p>
+                {results.length > 0 ? (
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 stagger">
+                    {results.map(p => <ProductCard key={p.id} product={p} />)}
+                  </div>
+                ) : (
+                  <div className="text-center py-20">
+                    <h3 className="text-lg font-bold text-foreground mb-2">No Results Found</h3>
+                    <p className="text-muted-foreground text-sm">Try a different search term.</p>
+                  </div>
+                )}
+              </>
             )}
           </>
         )}

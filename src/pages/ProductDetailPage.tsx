@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Container } from '@/components/ui/Container';
-import { getProductBySlug, isProductCompatible, getReviewsByProduct, dummyBranches } from '@/lib/dummy-data';
+import { useProduct } from '@/hooks/useProducts';
+import { useProductReviews } from '@/hooks/useReviews';
+import { isProductCompatible } from '@/lib/product-utils';
 import { useCart } from '@/contexts/CartContext';
 import { useVehicle } from '@/contexts/VehicleContext';
 import { formatPrice, calcDiscount, INSTALLATION } from '@/lib/constants';
@@ -10,7 +12,8 @@ import { useToast } from '@/hooks/use-toast';
 
 export default function ProductDetailPage() {
   const { slug } = useParams<{ slug: string }>();
-  const product = getProductBySlug(slug || '');
+  const { data: product, isLoading } = useProduct(slug || '');
+  const { data: reviews = [] } = useProductReviews(product?.id);
   const { addItem } = useCart();
   const { makeId, modelId, displayName } = useVehicle();
   const { toast } = useToast();
@@ -19,6 +22,14 @@ export default function ProductDetailPage() {
   const [quantity, setQuantity] = useState(1);
   const [installRequested, setInstallRequested] = useState(false);
   const [installType, setInstallType] = useState<'branch' | 'home'>('branch');
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center fade-in">
+        <div className="text-center text-muted-foreground">Loading product...</div>
+      </div>
+    );
+  }
 
   if (!product) {
     return (
@@ -37,7 +48,6 @@ export default function ProductDetailPage() {
   const compatible = makeId ? isProductCompatible(product, makeId, modelId) : null;
   const installCharge = installRequested ? (installType === 'home' ? INSTALLATION.home : INSTALLATION.branch) : 0;
   const totalPrice = variant.price * quantity + installCharge;
-  const reviews = getReviewsByProduct(product.id);
 
   const handleAddToCart = () => {
     addItem({
@@ -128,7 +138,7 @@ export default function ProductDetailPage() {
             <div className="mb-6">
               <p className="text-sm text-muted-foreground">
                 {variant.stock > 10 ? <span className="text-green-600 font-medium">In Stock</span> : variant.stock > 0 ? <span className="text-yellow-600 font-medium">Only {variant.stock} left</span> : <span className="text-destructive font-medium">Out of Stock</span>}
-                {' '}• Available at {dummyBranches.map(b => b.city).join(' & ')}
+                {' '}• Available in store
               </p>
             </div>
 

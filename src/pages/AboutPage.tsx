@@ -1,9 +1,10 @@
 import { Container } from '@/components/ui/Container';
-import { dummyBranches } from '@/lib/dummy-data';
+import { useBranches } from '@/hooks/useBranches';
 import { BUSINESS } from '@/lib/constants';
 import { MapPin, Phone, Clock, Shield, Wrench, Heart } from 'lucide-react';
 
 export default function AboutPage() {
+  const { data: branches = [] } = useBranches();
   return (
     <div className="fade-in">
       <section className="gradient-hero py-20">
@@ -29,7 +30,7 @@ export default function AboutPage() {
         </div>
         <h2 className="text-2xl font-black text-foreground mb-6">Our Branches</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {dummyBranches.map(b => (
+          {branches.map(b => (
             <div key={b.id} className="rounded-2xl border border-border bg-card p-6">
               <h3 className="font-bold text-foreground mb-3">{b.name}</h3>
               <div className="space-y-2 text-sm text-muted-foreground">

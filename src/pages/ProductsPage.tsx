@@ -1,32 +1,61 @@
 import { useState, useMemo } from 'react';
 import { Container } from '@/components/ui/Container';
 import { ProductCard } from '@/components/product/ProductCard';
-import { dummyProducts } from '@/lib/dummy-data';
+import { useProducts } from '@/hooks/useProducts';
 
 export default function ProductsPage() {
   const [sort, setSort] = useState('featured');
   const [page, setPage] = useState(1);
   const perPage = 12;
+  const { data: products = [], isLoading, isError } = useProducts();
 
   const sorted = useMemo(() => {
-    const arr = [...dummyProducts];
+    const arr = [...products];
     switch (sort) {
       case 'price-asc': return arr.sort((a, b) => (a.variants[0]?.price || 0) - (b.variants[0]?.price || 0));
       case 'price-desc': return arr.sort((a, b) => (b.variants[0]?.price || 0) - (a.variants[0]?.price || 0));
       case 'newest': return arr.sort((a, b) => b.created_at.localeCompare(a.created_at));
       default: return arr.sort((a, b) => (b.is_featured ? 1 : 0) - (a.is_featured ? 1 : 0));
     }
-  }, [sort]);
+  }, [products, sort]);
 
   const totalPages = Math.ceil(sorted.length / perPage);
   const paginated = sorted.slice((page - 1) * perPage, page * perPage);
+
+  if (isLoading) {
+    return (
+      <div className="fade-in">
+        <section className="gradient-hero py-12">
+          <Container><h1 className="text-3xl font-black text-dark-foreground">All Products</h1></Container>
+        </section>
+        <Container className="py-10">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-6">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="rounded-2xl border border-border bg-card animate-pulse aspect-square" />
+            ))}
+          </div>
+        </Container>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center fade-in">
+        <div className="text-center">
+          <h1 className="text-2xl font-black text-foreground mb-2">Failed to load products</h1>
+          <p className="text-muted-foreground">Please try again later.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fade-in">
       <section className="gradient-hero py-12">
         <Container>
           <h1 className="text-3xl font-black text-dark-foreground">All Products</h1>
-          <p className="text-dark-foreground/60 mt-2">{dummyProducts.length} products available</p>
+          <p className="text-dark-foreground/60 mt-2">{products.length} products available</p>
         </Container>
       </section>
       <Container className="py-10">
