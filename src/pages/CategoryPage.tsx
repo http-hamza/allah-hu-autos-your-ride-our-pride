@@ -2,13 +2,15 @@ import { useState, useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Container } from '@/components/ui/Container';
 import { ProductCard } from '@/components/product/ProductCard';
-import { dummyCategories, getCategoryBySlug, getProductsByCategory } from '@/lib/dummy-data';
+import { useCategories, useCategory } from '@/hooks/useCategories';
+import { useProductsByCategory } from '@/hooks/useProducts';
 import { ChevronRight, Package } from 'lucide-react';
 
 export default function CategoryPage() {
   const { slug } = useParams<{ slug: string }>();
-  const category = getCategoryBySlug(slug || '');
-  const products = getProductsByCategory(slug || '');
+  const { data: category, isLoading: catLoading } = useCategory(slug || '');
+  const { data: products = [], isLoading: prodLoading } = useProductsByCategory(slug || '');
+  const { data: allCategories = [] } = useCategories();
   const [sort, setSort] = useState('featured');
 
   const sorted = useMemo(() => {
@@ -20,6 +22,19 @@ export default function CategoryPage() {
       default: return arr.sort((a, b) => (b.is_featured ? 1 : 0) - (a.is_featured ? 1 : 0));
     }
   }, [products, sort]);
+
+  if (catLoading || prodLoading) {
+    return (
+      <div className="fade-in">
+        <section className="gradient-hero py-12"><Container><div className="h-8 w-48 rounded-lg bg-dark-foreground/20 animate-pulse" /></Container></section>
+        <Container className="py-10">
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+            {Array.from({ length: 6 }).map((_, i) => <div key={i} className="rounded-2xl border border-border bg-card animate-pulse aspect-square" />)}
+          </div>
+        </Container>
+      </div>
+    );
+  }
 
   if (!category) {
     return (
@@ -54,7 +69,7 @@ export default function CategoryPage() {
             <div className="sticky top-20 rounded-2xl border border-border bg-card p-4 max-h-[70vh] overflow-y-auto no-scrollbar">
               <h3 className="font-bold text-foreground mb-3">All Categories</h3>
               <ul className="space-y-0.5">
-                {dummyCategories.map(c => (
+                {allCategories.map(c => (
                   <li key={c.slug}>
                     <Link
                       to={`/categories/${c.slug}`}

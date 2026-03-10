@@ -13,14 +13,15 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    if (login(email, password)) {
+    const success = await login(email, password);
+    if (success) {
       toast({ title: 'Welcome back!' });
       navigate('/');
     } else {
-      setError('Invalid credentials. Try admin@allahhuautos.pk or ali@gmail.com');
+      setError('Invalid credentials. Please check your email and password.');
     }
   };
 

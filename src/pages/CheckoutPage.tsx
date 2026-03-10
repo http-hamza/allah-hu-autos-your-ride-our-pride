@@ -2,19 +2,67 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Container } from '@/components/ui/Container';
 import { useCart } from '@/contexts/CartContext';
-import { formatPrice, generateOrderNumber, DELIVERY, CITIES } from '@/lib/constants';
-import { dummyBranches } from '@/lib/dummy-data';
+import { useAuth } from '@/contexts/AuthContext';
+import { formatPrice, generateOrderNumber, CITIES } from '@/lib/constants';
+import { supabase } from '@/integrations/supabase/client';
 import { CreditCard } from 'lucide-react';
 
 export default function CheckoutPage() {
   const { items, getSubtotal, getInstallTotal, getDeliveryFee, getGrandTotal, clearCart } = useCart();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState({ name: '', phone: '', city: 'Lahore', address: '' });
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmitting(true);
     const orderNum = generateOrderNumber();
+
+    if (user) {
+      try {
+        const { data: order } = await supabase
+          .from('orders')
+          .insert({
+            order_number: orderNum,
+            user_id: user.id,
+            subtotal: getSubtotal(),
+            delivery_fee: getDeliveryFee(),
+            install_total: getInstallTotal(),
+            grand_total: getGrandTotal(),
+            shipping_name: form.name,
+            shipping_phone: form.phone,
+            shipping_city: form.city,
+            shipping_address: form.address,
+          })
+          .select('id')
+          .single();
+
+        if (order) {
+          await supabase.from('order_items').insert(
+            items.map(i => ({
+              order_id: order.id,
+              product_id: i.productId,
+              variant_id: i.variantId,
+              product_name: i.productName,
+              variant_name: i.variantName,
+              image_url: i.imageUrl,
+              price: i.price,
+              quantity: i.quantity,
+              install_requested: i.installRequested,
+              install_type: i.installType,
+              install_charge: i.installCharge,
+            })),
+          );
+        }
+      } catch (err) {
+        console.error('Failed to save order to database:', err);
+        // Continue to show confirmation — order number is already generated
+      }
+    }
+
     clearCart();
+    setSubmitting(false);
     navigate(`/order-confirmation/${orderNum}`);
   };
 
@@ -89,8 +137,8 @@ export default function CheckoutPage() {
                     <span className="font-black text-lg text-foreground">{formatPrice(getGrandTotal())}</span>
                   </div>
                 </div>
-                <button type="submit" className="btn-primary w-full flex items-center justify-center mt-6 h-12 text-base">
-                  Place Order
+                <button type="submit" disabled={submitting} className="btn-primary w-full flex items-center justify-center mt-6 h-12 text-base disabled:opacity-70">
+                  {submitting ? 'Placing Order...' : 'Place Order'}
                 </button>
               </div>
             </div>

@@ -2,7 +2,8 @@ import { Link } from 'react-router-dom';
 import { Container } from '@/components/ui/Container';
 import { VehicleSelector } from '@/components/vehicle/VehicleSelector';
 import { ProductCard } from '@/components/product/ProductCard';
-import { getFeaturedProducts, getFeaturedCategories, dummyCategories } from '@/lib/dummy-data';
+import { useFeaturedProducts } from '@/hooks/useProducts';
+import { useFeaturedCategories, useCategories } from '@/hooks/useCategories';
 import { Shield, Truck, Clock, Wrench, CreditCard, HeadphonesIcon, ChevronRight, Lightbulb, Armchair, Volume2, Car, Square, Tablet, Sparkles, Camera } from 'lucide-react';
 
 const iconMap: Record<string, React.ReactNode> = {
@@ -14,8 +15,9 @@ const iconMap: Record<string, React.ReactNode> = {
 };
 
 export default function HomePage() {
-  const featured = getFeaturedProducts().slice(0, 8);
-  const featuredCats = getFeaturedCategories();
+  const { data: featured = [] } = useFeaturedProducts();
+  const { data: featuredCats = [] } = useFeaturedCategories();
+  const { data: allCategories = [] } = useCategories();
 
   return (
     <div className="fade-in">
@@ -69,7 +71,7 @@ export default function HomePage() {
           </div>
           <div className="text-center mt-8">
             <Link to="/categories/led-lights" className="text-sm font-semibold text-primary hover:underline inline-flex items-center gap-1">
-              View All 43 Categories <ChevronRight className="h-4 w-4" />
+              View All {allCategories.length > 0 ? allCategories.length : ''} Categories <ChevronRight className="h-4 w-4" />
             </Link>
           </div>
         </Container>
@@ -88,7 +90,7 @@ export default function HomePage() {
             </Link>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-6 stagger">
-            {featured.map(p => <ProductCard key={p.id} product={p} />)}
+            {featured.slice(0, 8).map(p => <ProductCard key={p.id} product={p} />)}
           </div>
         </Container>
       </section>
