@@ -2,10 +2,12 @@ import { Link } from 'react-router-dom';
 import { Car, MapPin, Phone, Clock, Mail, Instagram, Facebook } from 'lucide-react';
 import { Container } from '@/components/ui/Container';
 import { BUSINESS } from '@/lib/constants';
-import { dummyBranches, dummyCategories } from '@/lib/dummy-data';
+import { useBranches } from '@/hooks/useBranches';
+import { useFeaturedCategories } from '@/hooks/useCategories';
 
 export function Footer() {
-  const featuredCats = dummyCategories.filter(c => c.is_featured).slice(0, 8);
+  const { data: branches = [] } = useBranches();
+  const { data: featuredCats = [] } = useFeaturedCategories();
 
   return (
     <footer className="gradient-dark text-dark-foreground">
@@ -61,7 +63,7 @@ export function Footer() {
           <div>
             <h4 className="font-bold text-dark-foreground mb-4">Contact Us</h4>
             <ul className="space-y-3">
-              {dummyBranches.map(b => (
+              {branches.map(b => (
                 <li key={b.id} className="flex gap-2 text-sm text-dark-foreground/60">
                   <MapPin className="h-4 w-4 shrink-0 mt-0.5 text-primary" />
                   <span>{b.address}</span>

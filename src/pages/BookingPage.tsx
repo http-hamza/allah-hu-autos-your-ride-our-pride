@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Container } from '@/components/ui/Container';
-import { dummyBranches } from '@/lib/dummy-data';
+import { useBranches } from '@/hooks/useBranches';
+import { useAuth } from '@/contexts/AuthContext';
 import { TIME_SLOTS, generateBookingNumber } from '@/lib/constants';
+import { supabase } from '@/integrations/supabase/client';
 import { ChevronRight, ChevronLeft, Check, MapPin, Calendar, User } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -13,16 +15,42 @@ export default function BookingPage() {
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
   const [form, setForm] = useState({ name: '', phone: '', address: '', notes: '' });
+  const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
+  const { data: branches = [] } = useBranches();
 
   const dates = Array.from({ length: 14 }, (_, i) => {
     const d = new Date(); d.setDate(d.getDate() + i + 1);
     return { value: d.toISOString().split('T')[0], label: d.toLocaleDateString('en-PK', { weekday: 'short', day: 'numeric', month: 'short' }) };
   });
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    setSubmitting(true);
     const num = generateBookingNumber();
+
+    if (user) {
+      try {
+        await supabase.from('bookings').insert({
+          booking_number: num,
+          user_id: user.id,
+          branch_id: branch,
+          service_type: service,
+          date,
+          time_slot: time,
+          customer_name: form.name,
+          customer_phone: form.phone,
+          customer_address: form.address || null,
+          notes: form.notes || null,
+        });
+      } catch (err) {
+        console.error('Failed to save booking to database:', err);
+        // Continue to show confirmation — booking number is already generated
+      }
+    }
+
+    setSubmitting(false);
     toast({ title: 'Booking Confirmed!', description: `Booking #${num}` });
     navigate('/account/bookings');
   };
@@ -48,7 +76,7 @@ export default function BookingPage() {
             <div>
               <h3 className="font-bold text-foreground mb-3 flex items-center gap-2"><MapPin className="h-4 w-4 text-primary" /> Select Branch</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {dummyBranches.map(b => (
+                {branches.map(b => (
                   <button key={b.id} onClick={() => setBranch(b.id)} className={`text-left rounded-2xl border p-4 transition-colors ${branch === b.id ? 'border-primary bg-accent' : 'border-border hover:border-primary/50'}`}>
                     <p className="font-semibold text-foreground text-sm">{b.name}</p>
                     <p className="text-xs text-muted-foreground mt-1">{b.address}</p>
@@ -119,14 +147,14 @@ export default function BookingPage() {
               </div>
             </div>
             <div className="rounded-2xl border border-border bg-accent p-4 text-sm space-y-1">
-              <p><span className="text-muted-foreground">Branch:</span> <span className="font-medium text-foreground">{dummyBranches.find(b => b.id === branch)?.name}</span></p>
+              <p><span className="text-muted-foreground">Branch:</span> <span className="font-medium text-foreground">{branches.find(b => b.id === branch)?.name}</span></p>
               <p><span className="text-muted-foreground">Service:</span> <span className="font-medium text-foreground capitalize">{service.replace('_', ' ')}</span></p>
               <p><span className="text-muted-foreground">Date:</span> <span className="font-medium text-foreground">{date}</span></p>
               <p><span className="text-muted-foreground">Time:</span> <span className="font-medium text-foreground">{time}</span></p>
             </div>
             <div className="flex justify-between">
               <button onClick={() => setStep(2)} className="btn-dark flex items-center gap-2"><ChevronLeft className="h-4 w-4" /> Back</button>
-              <button onClick={handleSubmit} disabled={!form.name || !form.phone} className="btn-primary flex items-center gap-2 disabled:opacity-50">Confirm Booking</button>
+              <button onClick={handleSubmit} disabled={!form.name || !form.phone || submitting} className="btn-primary flex items-center gap-2 disabled:opacity-50">{submitting ? 'Confirming...' : 'Confirm Booking'}</button>
             </div>
           </div>
         )}

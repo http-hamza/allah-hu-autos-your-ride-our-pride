@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { dummyVehicleMakes, dummyVehicleModels, dummyVehicles } from '@/lib/dummy-data';
 
 type VehicleState = {
   makeId: string | null;
@@ -12,9 +11,9 @@ type VehicleState = {
 };
 
 type VehicleContextType = VehicleState & {
-  setMake: (makeId: string) => void;
-  setModel: (modelId: string) => void;
-  setVehicle: (vehicleId: string) => void;
+  setMake: (makeId: string, makeName: string) => void;
+  setModel: (modelId: string, modelName: string) => void;
+  setVehicle: (vehicleId: string, year: number, displayName: string) => void;
   clearVehicle: () => void;
 };
 
@@ -37,19 +36,16 @@ export function VehicleProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem(VEHICLE_KEY, JSON.stringify(state));
   }, [state]);
 
-  const setMake = useCallback((makeId: string) => {
-    const make = dummyVehicleMakes.find(m => m.id === makeId);
-    if (make) setState({ makeId, makeName: make.name, modelId: null, modelName: null, vehicleId: null, year: null, displayName: null });
+  const setMake = useCallback((makeId: string, makeName: string) => {
+    setState({ makeId, makeName, modelId: null, modelName: null, vehicleId: null, year: null, displayName: null });
   }, []);
 
-  const setModel = useCallback((modelId: string) => {
-    const model = dummyVehicleModels.find(m => m.id === modelId);
-    if (model) setState(prev => ({ ...prev, modelId, modelName: model.name, vehicleId: null, year: null, displayName: null }));
+  const setModel = useCallback((modelId: string, modelName: string) => {
+    setState(prev => ({ ...prev, modelId, modelName, vehicleId: null, year: null, displayName: null }));
   }, []);
 
-  const setVehicle = useCallback((vehicleId: string) => {
-    const veh = dummyVehicles.find(v => v.id === vehicleId);
-    if (veh) setState(prev => ({ ...prev, vehicleId, year: veh.year, displayName: veh.display_name }));
+  const setVehicle = useCallback((vehicleId: string, year: number, displayName: string) => {
+    setState(prev => ({ ...prev, vehicleId, year, displayName }));
   }, []);
 
   const clearVehicle = useCallback(() => setState(emptyState), []);

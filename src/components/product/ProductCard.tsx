@@ -3,7 +3,7 @@ import { ShoppingCart, Check, X as XIcon } from 'lucide-react';
 import type { Product } from '@/lib/types';
 import { formatPrice, calcDiscount } from '@/lib/constants';
 import { useVehicle } from '@/contexts/VehicleContext';
-import { isProductCompatible } from '@/lib/dummy-data';
+import { isProductCompatible } from '@/lib/product-utils';
 
 export function ProductCard({ product }: { product: Product }) {
   const { makeId, modelId, displayName } = useVehicle();
