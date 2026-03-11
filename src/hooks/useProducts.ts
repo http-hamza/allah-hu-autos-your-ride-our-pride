@@ -58,6 +58,35 @@ export function useProducts() {
   });
 }
 
+// Admin CRUD functions
+export async function createProduct(product: Omit<Product, 'id' | 'created_at'>) {
+  const { data, error } = await supabase
+    .from('products')
+    .insert([product])
+    .select();
+  if (error) throw error;
+  return data?.[0];
+}
+
+export async function updateProduct(productId: string, updates: Partial<Product>) {
+  const { data, error } = await supabase
+    .from('products')
+    .update(updates)
+    .eq('id', productId)
+    .select();
+  if (error) throw error;
+  return data?.[0];
+}
+
+export async function deleteProduct(productId: string) {
+  const { error } = await supabase
+    .from('products')
+    .delete()
+    .eq('id', productId);
+  if (error) throw error;
+  return true;
+}
+
 export function useFeaturedProducts() {
   return useQuery({
     queryKey: ['products', 'featured'],

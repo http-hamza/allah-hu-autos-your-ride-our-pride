@@ -55,3 +55,32 @@ export function useCategory(slug: string) {
     enabled: !!slug,
   });
 }
+
+// Admin CRUD functions
+export async function createCategory(category: Omit<Category, 'id' | 'product_count'>) {
+  const { data, error } = await supabase
+    .from('categories')
+    .insert([category])
+    .select();
+  if (error) throw error;
+  return data?.[0];
+}
+
+export async function updateCategory(categoryId: string, updates: Partial<Category>) {
+  const { data, error } = await supabase
+    .from('categories')
+    .update(updates)
+    .eq('id', categoryId)
+    .select();
+  if (error) throw error;
+  return data?.[0];
+}
+
+export async function deleteCategory(categoryId: string) {
+  const { error } = await supabase
+    .from('categories')
+    .delete()
+    .eq('id', categoryId);
+  if (error) throw error;
+  return true;
+}

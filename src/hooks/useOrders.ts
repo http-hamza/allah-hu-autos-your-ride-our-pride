@@ -59,3 +59,32 @@ export function useAllOrders() {
     queryFn: fetchAllOrders,
   });
 }
+
+// Admin/User CRUD functions
+export async function createOrder(order: Omit<Order, 'id' | 'created_at'>) {
+  const { data, error } = await supabase
+    .from('orders')
+    .insert([order])
+    .select();
+  if (error) throw error;
+  return data?.[0];
+}
+
+export async function updateOrder(orderId: string, updates: Partial<Order>) {
+  const { data, error } = await supabase
+    .from('orders')
+    .update(updates)
+    .eq('id', orderId)
+    .select();
+  if (error) throw error;
+  return data?.[0];
+}
+
+export async function deleteOrder(orderId: string) {
+  const { error } = await supabase
+    .from('orders')
+    .delete()
+    .eq('id', orderId);
+  if (error) throw error;
+  return true;
+}
